@@ -3,11 +3,12 @@ import datetime
 from django import forms
 from django.conf import settings
 
+STATIC_URL = getattr(settings, 'STATIC_URL', '/')
 OTHER_CHOICE = ("_OTHER", "[Other]")
 
 class OtherSelectWidget(forms.MultiWidget):
     class Media:
-        js = (settings.STATIC_URL + 'nice_types/otherchoice.js',)
+        js = (STATIC_URL + 'nice_types/otherchoice.js',)
 
     def __init__(self, choices, attrs=None):
         self.default_choices = [OTHER_CHOICE] + choices

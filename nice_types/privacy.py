@@ -1,20 +1,21 @@
-from django.utils.datastructures import SortedDict
 import types
 
 class PrivacyContext(object):
     def __init__(self):
+        from django.utils.datastructures import SortedDict
         self.roles = SortedDict()
         self.comparator = cmp
-        self.privacy_field = 'privacy'
+        self.get_privacy = lambda obj: getattr(obj, 'privacy', {})
 
 class RestrictedObject(object):
-    def __init__(self, restricted, accessor, context):
-        self.restricted = restricted
-        self.privacy = getattr(restricted, context.privacy_field, {})
-        self.accessor = accessor
-        self.context = context
+    def __init__(self, restricted, accessor, context, prefix=""):
+        self._restricted = restricted
+        self._privacy = context.get_privacy(restricted)
+        self._accessor = accessor
+        self._context = context
+        self._prefix = prefix
 
-    def blanktype(self, value):
+    def _blanktype(self, value):
         if type(value) in types.StringTypes:
             return ""
         return "moo"
@@ -22,7 +23,9 @@ class RestrictedObject(object):
         #    return self.BlankImage()
 
     def __getattr__(self, attr):
-        if self.context.comparator(self.accessor, self.privacy.get(attr, None)) > 0:
-            return getattr(self.restricted, attr)
+        full_attr = '.'.join(self._prefix, attr)
+        print full_attr
+        if self._context.comparator(self._accessor, self._privacy.get(full_attr, None)) > 0:
+            return RestrictedObject(getattr(self._restricted, attr), self._accessor, self._context, full_attr)
         return self.blanktype(getattr(self.restricted, attr))
 
